@@ -3284,6 +3284,19 @@
 
             // Build displayed string - PRESERVE EXACT PRECISION
             let baseText;
+
+            // NEW LOGIC: Use formattedValue by default if no specific format is configured
+            const hasSpecificFormat = settings.formatType && settings.formatType !== 'text';
+            const hasDecimals = settings.decimals !== null && settings.decimals !== undefined;
+
+            if (!hasSpecificFormat && !hasDecimals) {
+                baseText = (value ?? '').toString();
+                return {
+                    displayText: shapePrefix ? (shapePrefix + ' ' + baseText) : baseText,
+                    shapePrefix: shapePrefix,
+                    rawValue: value
+                };
+            }
             if (fmtType === 'text') {
                 baseText = (value ?? '').toString();
             } else {

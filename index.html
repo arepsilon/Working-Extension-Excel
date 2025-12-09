@@ -410,6 +410,19 @@
 
             // Build displayed string
             let baseText;
+
+            // NEW LOGIC: Use formattedValue by default if no specific format is configured
+            const hasSpecificFormat = settings.formatType && settings.formatType !== 'text';
+            const hasDecimals = settings.decimals !== null && settings.decimals !== undefined;
+
+            if (!hasSpecificFormat && !hasDecimals) {
+                baseText = (value ?? '').toString();
+                return {
+                    displayText: shapePrefix ? (shapePrefix + ' ' + baseText) : baseText,
+                    shapePrefix: shapePrefix,
+                    rawValue: value
+                };
+            }
             if (fmtType === 'text') {
                 baseText = (value ?? '').toString();
             } else {
@@ -871,6 +884,10 @@
                     const displayName = fieldRenames[col.id] || col.name;
                     let value = row[col.id];
 
+                    // Use formatValueForExcel to handle formatting (including default formattedValue)
+                    const formattedResult = formatValueForExcel(value, col.id);
+                    newRow[displayName] = formattedResult.displayText;
+                    return;
                     // PATCH: Preserve date formatting
                     if (value && typeof value === 'string' && (
                         /\d{1,2}\/\d{1,2}\/\d{2,4}/.test(value) ||
