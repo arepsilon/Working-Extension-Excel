@@ -3374,7 +3374,7 @@
 
             let displayValue;
 
-            if (formatType === 'text' || (decimals === null || decimals === undefined)) {
+            if (formatType !== 'date' && (formatType === 'text' || (decimals === null || decimals === undefined))) {
                 // Show the raw value exactly as it is
                 displayValue = value.toString();
             } else {
@@ -3645,37 +3645,9 @@
 
                     // Apply formatting settings from both Row Groups and Values sections
                     if (value !== null && value !== undefined && !isNullValue(value)) {
-                        // Get the formatting settings
-                        const settings = formatSettings[col.id] || {};
-                        const decimals = settings.decimals;
-                        const formatType = settings.formatType || 'number';
-                        const currencySymbol = settings.currencySymbol || '';
-
-                        // Apply formatting logic (same as before)
-                        if (typeof decimals === 'number') {
-                            const numValue = parseFloat(value);
-                            if (!isNaN(numValue)) {
-                                let formattedValue;
-
-                                if (decimals === 0) {
-                                    formattedValue = Math.round(numValue).toString();
-                                } else {
-                                    formattedValue = numValue.toFixed(decimals);
-                                }
-
-                                if (formatType === 'currency') {
-                                    value = currencySymbol + formattedValue;
-                                } else if (formatType === 'percentage') {
-                                    value = (numValue * 100).toFixed(decimals || 2) + '%';
-                                } else {
-                                    value = formattedValue;
-                                }
-                            } else {
-                                value = value.toString();
-                            }
-                        } else {
-                            value = value.toString();
-                        }
+                        // Use the shared formatting function
+                        const formattedResult = formatValueForExcel(value, col.id);
+                        value = formattedResult.displayText;
                     } else {
                         value = cleanDisplayValue(value);
                     }
