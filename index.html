@@ -364,7 +364,7 @@
             formatCache.set(cacheKey, formatStr);
             return formatStr;
         }
-        function formatValueForExcel(value, columnId, isTotal = false, headerType = null) {
+        function formatValueForExcel(value, columnId, isTotal = false, headerType = null, row = null) {
             const settings = formatSettings[columnId] || {};
             // PATCH: Use actual decimals from settings, but preserve original precision if not specified
             const decimals = settings.formatType === 'text' ? null : (settings.decimals ?? null);
@@ -416,7 +416,12 @@
             const hasDecimals = settings.decimals !== null && settings.decimals !== undefined;
 
             if (!hasSpecificFormat && !hasDecimals) {
-                baseText = (value ?? '').toString();
+                // Try to use the formatted value from the row if available
+                if (row && row[columnId + '_formatted']) {
+                    baseText = row[columnId + '_formatted'];
+                } else {
+                    baseText = (value ?? '').toString();
+                }
                 return {
                     displayText: shapePrefix ? (shapePrefix + ' ' + baseText) : baseText,
                     shapePrefix: shapePrefix,
@@ -885,7 +890,7 @@
                     let value = row[col.id];
 
                     // Use formatValueForExcel to handle formatting (including default formattedValue)
-                    const formattedResult = formatValueForExcel(value, col.id);
+                    const formattedResult = formatValueForExcel(value, col.id, false, null, row);
                     newRow[displayName] = formattedResult.displayText;
                     return;
                     // PATCH: Preserve date formatting
@@ -3368,6 +3373,7 @@
 
                                         // Clean null values immediately
                                         obj[c.fieldName] = isNullValue(rawValue) ? null : rawValue;
+                                        obj[c.fieldName + '_formatted'] = cell?.formattedValue || '';
                                     } else {
                                         obj[c.fieldName] = null;
                                     }

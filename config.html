@@ -2291,6 +2291,7 @@
 
                                         // Clean null values immediately but preserve numeric precision
                                         obj[col.fieldName] = isNullValue(rawValue) ? null : rawValue;
+                                        obj[col.fieldName + '_formatted'] = cell?.formattedValue || '';
                                     } else {
                                         obj[col.fieldName] = null;
                                     }
@@ -3239,7 +3240,7 @@
         }
 
         // Replace the formatValueForExcel function in config.html with this version:
-        function formatValueForExcel(value, columnId, isTotal = false, headerType = null) {
+        function formatValueForExcel(value, columnId, isTotal = false, headerType = null, row = null) {
             const settings = formatSettings[columnId] || {};
             const decimals = settings.formatType === 'text' ? null : (settings.decimals ?? null);
             const fmtType = settings.formatType || 'number';
@@ -3290,7 +3291,12 @@
             const hasDecimals = settings.decimals !== null && settings.decimals !== undefined;
 
             if (!hasSpecificFormat && !hasDecimals) {
-                baseText = (value ?? '').toString();
+                // Try to use the formatted value from the row if available
+                if (row && row[columnId + '_formatted']) {
+                    baseText = row[columnId + '_formatted'];
+                } else {
+                    baseText = (value ?? '').toString();
+                }
                 return {
                     displayText: shapePrefix ? (shapePrefix + ' ' + baseText) : baseText,
                     shapePrefix: shapePrefix,
