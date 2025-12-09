@@ -3695,7 +3695,7 @@
 
                 await tableau.extensions.initializeAsync({
                     configure: () => {
-                        const url = '${window.location.origin}/config.html';
+                        const url = 'https://working-extension-excel.vercel.app/config.html';
                         tableau.extensions.ui
                             .displayDialogAsync(url, '', { width: 800, height: 600 })
                             .catch(err => console.error('Dialog error:', err));
