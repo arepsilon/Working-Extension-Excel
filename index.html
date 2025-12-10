@@ -305,6 +305,60 @@
             return null;
         }
 
+
+        // Convert user-friendly date format to Excel format codes
+        function convertToExcelDateFormat(dateFormat) {
+            if (!dateFormat) return 'mm/dd/yyyy';
+            return dateFormat
+                .replace(/YYYY/g, 'yyyy')
+                .replace(/YY/g, 'yy')
+                .replace(/MMMM/g, 'mmmm')
+                .replace(/MMM/g, 'mmm')
+                .replace(/MM/g, 'mm')
+                .replace(/DD/g, 'dd')
+                .replace(/HH/g, 'hh')
+                .replace(/ss/g, 'ss');
+        }
+
+        // Format date value for display based on user's date format pattern  
+        function formatDateWithPattern(date, pattern) {
+            const pad = (n) => n.toString().padStart(2, '0');
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const fullMonths = ['January', 'February', 'March', 'April', 'May', 'June',
+                'July', 'August', 'September', 'October', 'November', 'December'];
+
+            return pattern
+                .replace('YYYY', date.getFullYear())
+                .replace('YY', String(date.getFullYear()).slice(-2))
+                .replace('MMMM', fullMonths[date.getMonth()])
+                .replace('MMM', months[date.getMonth()])
+                .replace('MM', pad(date.getMonth() + 1))
+                .replace('DD', pad(date.getDate()))
+                .replace('HH', pad(date.getHours()))
+                .replace('mm', pad(date.getMinutes()))
+                .replace('ss', pad(date.getSeconds()));
+        }
+
+        // Format a date value according to the configured date format
+        function formatDateValue(value, dateFormat) {
+            if (!value || isNullValue(value)) return '';
+
+            let dateObj;
+            if (value instanceof Date) {
+                dateObj = value;
+            } else if (typeof value === 'string') {
+                dateObj = new Date(value);
+            } else if (typeof value === 'number') {
+                dateObj = new Date((value - 25569) * 86400 * 1000);
+            }
+
+            if (!dateObj || isNaN(dateObj.getTime())) {
+                return value.toString();
+            }
+
+            return formatDateWithPattern(dateObj, dateFormat);
+        }
         // Optimized format string caching
         function getFormatString(columnId, shapePrefix = '') {
             const cacheKey = `${columnId}_${shapePrefix}`;
@@ -321,6 +375,10 @@
 
             if (fmtType === 'text') {
                 formatStr = '@'; // Text format
+            } else if (fmtType === 'date') {
+                // Date format - convert user format to Excel format codes
+                const dateFormat = settings.dateFormat || 'MM/DD/YYYY';
+                formatStr = convertToExcelDateFormat(dateFormat);
             } else if (decimals !== null && decimals !== undefined) {
                 // User has specified decimal formatting - respect it
                 if (decimals === 0) {
@@ -430,6 +488,10 @@
             }
             if (fmtType === 'text') {
                 baseText = (value ?? '').toString();
+            } else if (fmtType === 'date') {
+                // Format date according to user's selected format
+                const dateFormat = settings.dateFormat || 'MM/DD/YYYY';
+                baseText = formatDateValue(value, dateFormat);
             } else {
                 const numValue = parseFloat(value);
                 if (isNaN(numValue)) {
