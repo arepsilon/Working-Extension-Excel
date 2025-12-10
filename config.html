@@ -3206,6 +3206,27 @@
             // Clean display value - show blank for nulls
             let textValue = cleanDisplayValue(value);
 
+            // Apply date formatting if this column is configured as a date
+            if (settings.formatType === 'date' && !isNullValue(value)) {
+                try {
+                    const dateVal = new Date(value);
+                    if (!isNaN(dateVal.getTime())) {
+                        const formatStr = settings.dateFormat || 'MM/DD/YYYY';
+                        const day = dateVal.getDate().toString().padStart(2, '0');
+                        const month = (dateVal.getMonth() + 1).toString().padStart(2, '0');
+                        const year = dateVal.getFullYear().toString();
+
+                        // Basic replacement - can be expanded for more tokens
+                        textValue = formatStr
+                            .replace('YYYY', year)
+                            .replace('MM', month)
+                            .replace('DD', day);
+                    }
+                } catch (e) {
+                    // If date parsing fails, keep the original cleaned value
+                }
+            }
+
             td.setAttribute('data-value', textValue);
             td.setAttribute('data-column-id', columnId);
             td.textContent = textValue;

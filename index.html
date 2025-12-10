@@ -981,7 +981,8 @@
                     // Add format information for CSV generation
                     formatType: settings.formatType || 'text',
                     decimals: settings.decimals !== undefined ? settings.decimals : null,
-                    currencySymbol: settings.currencySymbol || ''
+                    currencySymbol: settings.currencySymbol || '',
+                    dateFormat: settings.dateFormat || 'MM/DD/YYYY'
                 };
             });
 
@@ -2569,12 +2570,50 @@
                                         if (config.useCustomSubtotalLabels && config.subtotalLabels && config.subtotalLabels[lvl]) {
                                             cell.value = config.subtotalLabels[lvl];
                                         } else {
-                                            const groupVal = cleanDisplayValue(prevGroup[lvl]);
+                                            let groupVal = cleanDisplayValue(prevGroup[lvl]);
+
+                                            // Apply date formatting if configured
+                                            const settings = formatSettings[gc.id];
+                                            if (settings?.formatType === 'date' && !isNullValue(prevGroup[lvl])) {
+                                                try {
+                                                    const dateVal = new Date(prevGroup[lvl]);
+                                                    if (!isNaN(dateVal.getTime())) {
+                                                        const formatStr = settings.dateFormat || 'MM/DD/YYYY';
+                                                        const day = dateVal.getDate().toString().padStart(2, '0');
+                                                        const month = (dateVal.getMonth() + 1).toString().padStart(2, '0');
+                                                        const year = dateVal.getFullYear().toString();
+                                                        groupVal = formatStr
+                                                            .replace('YYYY', year)
+                                                            .replace('MM', month)
+                                                            .replace('DD', day);
+                                                    }
+                                                } catch (e) {}
+                                            }
+
                                             cell.value = `${groupVal} Subtotal`;
                                         }
                                     } else if (idx < lvl) {
-                                        // Clean the display value
-                                        cell.value = cleanDisplayValue(prevGroup[idx]);
+                                        // Clean the display value and apply date formatting
+                                        let cleanVal = cleanDisplayValue(prevGroup[idx]);
+
+                                        const settings = formatSettings[gc.id];
+                                        if (settings?.formatType === 'date' && !isNullValue(prevGroup[idx])) {
+                                            try {
+                                                const dateVal = new Date(prevGroup[idx]);
+                                                if (!isNaN(dateVal.getTime())) {
+                                                    const formatStr = settings.dateFormat || 'MM/DD/YYYY';
+                                                    const day = dateVal.getDate().toString().padStart(2, '0');
+                                                    const month = (dateVal.getMonth() + 1).toString().padStart(2, '0');
+                                                    const year = dateVal.getFullYear().toString();
+                                                    cleanVal = formatStr
+                                                        .replace('YYYY', year)
+                                                        .replace('MM', month)
+                                                        .replace('DD', day);
+                                                }
+                                            } catch (e) {}
+                                        }
+
+                                        cell.value = cleanVal;
                                     } else {
                                         cell.value = '';
                                     }
@@ -2664,17 +2703,39 @@
                     const dataRow = ws.getRow(currentRow);
                     let colIdx = 1;
 
-                    // Group columns - clean null values
+                    // Group columns - clean null values and apply date formatting
                     rowVals.forEach((val, idx) => {
                         const cell = dataRow.getCell(colIdx++);
                         // Clean the display value - show blank for nulls
-                        const cleanVal = cleanDisplayValue(val);
+                        let cleanVal = cleanDisplayValue(val);
+
+                        // Apply date formatting if this column is configured as a date
+                        const settings = formatSettings[groupCols[idx].id];
+                        if (settings?.formatType === 'date' && !isNullValue(val)) {
+                            try {
+                                const dateVal = new Date(val);
+                                if (!isNaN(dateVal.getTime())) {
+                                    const formatStr = settings.dateFormat || 'MM/DD/YYYY';
+                                    const day = dateVal.getDate().toString().padStart(2, '0');
+                                    const month = (dateVal.getMonth() + 1).toString().padStart(2, '0');
+                                    const year = dateVal.getFullYear().toString();
+
+                                    // Basic replacement - can be expanded for more tokens
+                                    cleanVal = formatStr
+                                        .replace('YYYY', year)
+                                        .replace('MM', month)
+                                        .replace('DD', day);
+                                }
+                            } catch (e) {
+                                // If date parsing fails, keep the original cleaned value
+                            }
+                        }
+
                         cell.value = cleanVal;
                         cell.alignment = { vertical: 'middle', horizontal: 'left' };
                         cell.numFmt = '@';
 
                         // Apply conditional formatting efficiently
-                        const settings = formatSettings[groupCols[idx].id];
                         if (settings?.conditions) {
                             for (const cond of settings.conditions) {
                                 let met = false;
@@ -2836,11 +2897,49 @@
                                 if (config.useCustomSubtotalLabels && config.subtotalLabels && config.subtotalLabels[lvl]) {
                                     cell.value = config.subtotalLabels[lvl];
                                 } else {
-                                    const groupVal = cleanDisplayValue(prevGroup[lvl]);
+                                    let groupVal = cleanDisplayValue(prevGroup[lvl]);
+
+                                    // Apply date formatting if configured
+                                    const settings = formatSettings[gc.id];
+                                    if (settings?.formatType === 'date' && !isNullValue(prevGroup[lvl])) {
+                                        try {
+                                            const dateVal = new Date(prevGroup[lvl]);
+                                            if (!isNaN(dateVal.getTime())) {
+                                                const formatStr = settings.dateFormat || 'MM/DD/YYYY';
+                                                const day = dateVal.getDate().toString().padStart(2, '0');
+                                                const month = (dateVal.getMonth() + 1).toString().padStart(2, '0');
+                                                const year = dateVal.getFullYear().toString();
+                                                groupVal = formatStr
+                                                    .replace('YYYY', year)
+                                                    .replace('MM', month)
+                                                    .replace('DD', day);
+                                            }
+                                        } catch (e) {}
+                                    }
+
                                     cell.value = `${groupVal} Subtotal`;
                                 }
                             } else if (idx < lvl) {
-                                cell.value = cleanDisplayValue(prevGroup[idx]);
+                                let cleanVal = cleanDisplayValue(prevGroup[idx]);
+
+                                const settings = formatSettings[gc.id];
+                                if (settings?.formatType === 'date' && !isNullValue(prevGroup[idx])) {
+                                    try {
+                                        const dateVal = new Date(prevGroup[idx]);
+                                        if (!isNaN(dateVal.getTime())) {
+                                            const formatStr = settings.dateFormat || 'MM/DD/YYYY';
+                                            const day = dateVal.getDate().toString().padStart(2, '0');
+                                            const month = (dateVal.getMonth() + 1).toString().padStart(2, '0');
+                                            const year = dateVal.getFullYear().toString();
+                                            cleanVal = formatStr
+                                                .replace('YYYY', year)
+                                                .replace('MM', month)
+                                                .replace('DD', day);
+                                        }
+                                    } catch (e) {}
+                                }
+
+                                cell.value = cleanVal;
                             } else {
                                 cell.value = '';
                             }
@@ -3261,7 +3360,28 @@
                         const value = row[col.displayName];
 
                         // Clean display value - show blank for nulls
-                        const cleanValue = cleanDisplayValue(value);
+                        let cleanValue = cleanDisplayValue(value);
+
+                        // Apply date formatting if this column is configured as a date
+                        if (col.formatType === 'date' && !isNullValue(value)) {
+                            try {
+                                const dateVal = new Date(value);
+                                if (!isNaN(dateVal.getTime())) {
+                                    const formatStr = col.dateFormat || 'MM/DD/YYYY';
+                                    const day = dateVal.getDate().toString().padStart(2, '0');
+                                    const month = (dateVal.getMonth() + 1).toString().padStart(2, '0');
+                                    const year = dateVal.getFullYear().toString();
+
+                                    cleanValue = formatStr
+                                        .replace('YYYY', year)
+                                        .replace('MM', month)
+                                        .replace('DD', day);
+                                }
+                            } catch (e) {
+                                // If date parsing fails, keep the original cleaned value
+                            }
+                        }
+
                         cell.value = cleanValue;
 
                         // Basic formatting
@@ -3271,7 +3391,7 @@
                         };
 
                         // Auto-detect number format for better Excel compatibility
-                        if (cleanValue && !isNullValue(cleanValue) && !isNaN(cleanValue) && cleanValue.toString().trim() !== '') {
+                        if (col.formatType !== 'date' && cleanValue && !isNullValue(cleanValue) && !isNaN(cleanValue) && cleanValue.toString().trim() !== '') {
                             const numValue = parseFloat(cleanValue);
                             if (!isNaN(numValue)) {
                                 cell.value = numValue;
